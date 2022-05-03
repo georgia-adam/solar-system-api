@@ -6,6 +6,19 @@ from flask import Blueprint, jsonify, make_response, request, abort
 
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
 
+def validate_planet(id):
+    try:
+        id = int(id)
+    except:
+        abort(make_response({"message":f"planet {id} invalid"}, 400))
+
+    planet = Planet.query.get(id)
+
+    if not planet:
+        abort(make_response({"message":f"planet {id} not found"}, 404))
+    else:
+        return planet
+
 @planets_bp.route("", methods=["POST"])
 def create_planet():
     request_body = request.get_json()
@@ -51,25 +64,3 @@ def delete_planet(planet_id):
     db.session.delete(planet)
     db.session.commit()
     return make_response(f"Planet {planet_id} successfully deleted.")
-
-
-
-# ----old code not yet refactored----
-def validate_planet(id):
-    try:
-        id = int(id)
-    except:
-        abort(make_response({"message":f"planet {id} invalid"}, 400))
-
-    planet = Planet.query.get(id)
-
-    if not planet:
-        abort(make_response({"message":f"planet {id} not found"}, 404))
-    else:
-        return planet
-
-
-# @bp.route("/<id>", methods=["GET"])
-# def get_one_planet(id):
-#     planet = validate_planet(id)
-#     return planet.to_dict()
