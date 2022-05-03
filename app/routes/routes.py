@@ -1,6 +1,7 @@
+from unicodedata import name
 from app import db
 from app.models.planet import Planet
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request, abort
 
 
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
@@ -28,18 +29,38 @@ def get_planets():
     
     return jsonify(planets_response)
 
+@planets_bp.route("/<planet_id>", methods=["PUT"])
+def replace_planet(planet_id):
+    planet = validate_planet(planet_id)
+    request_body = request.get_json()
+    
+    try:
+        planet.name = request_body["name"]
+        planet.description = request_body["description"]
+        planet.has_life = request_body["has_life"]
+    except KeyError:
+        return make_response("Key Error", 400)
+
+    db.session.commit()
+    return make_response(f"Planet {planet_id} successfully updated!", 200)
+
+
+
+
+
 # ----old code not yet refactored----
-# def validate_planet(id):
-#     try:
-#         id = int(id)
-#     except:
-#         abort(make_response({"message":f"planet {id} invalid"}, 400))
+def validate_planet(id):
+    try:
+        id = int(id)
+    except:
+        abort(make_response({"message":f"planet {id} invalid"}, 400))
 
-#     for planet in planets:
-#         if planet.id == id:
-#             return planet
+    planet = Planet.query.get(id)
 
-#     abort(make_response({"message":f"planet {id} not found"}, 404))
+    if not planet:
+        abort(make_response({"message":f"planet {id} not found"}, 404))
+    else:
+        return planet
 
 
 # @bp.route("/<id>", methods=["GET"])
