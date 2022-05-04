@@ -1,23 +1,11 @@
 from unicodedata import name
 from app import db
 from app.models.planet import Planet
-from flask import Blueprint, jsonify, make_response, request, abort
+from flask import Blueprint, jsonify, make_response, request
+from .routes_helper import validate_planet, error_message
 
 
 planets_bp = Blueprint("planets", __name__, url_prefix="/planets")
-
-def validate_planet(id):
-    try:
-        id = int(id)
-    except:
-        abort(make_response({"message":f"planet {id} invalid"}, 400))
-
-    planet = Planet.query.get(id)
-
-    if not planet:
-        abort(make_response({"message":f"planet {id} not found"}, 404))
-    else:
-        return planet
 
 @planets_bp.route("", methods=["POST"])
 def create_planet():
@@ -36,7 +24,13 @@ def create_planet():
 
 @planets_bp.route("", methods=["GET"])
 def get_planets():
-    planets = Planet.query.all()
+    
+    name_param = request.args.get("name")
+
+    if name_param:
+        planets = Planet.query.filter_by(name=name_param)
+    else:
+        planets = Planet.query.all()
     
     planets_response = [planet.to_dict() for planet in planets]
     
@@ -51,8 +45,8 @@ def replace_planet(planet_id):
         planet.name = request_body["name"]
         planet.description = request_body["description"]
         planet.has_life = request_body["has_life"]
-    except KeyError:
-        return make_response("Key Error", 400)
+    except KeyError as err:
+        error_message(f"Missing key {err}", 400)
 
     db.session.commit()
     return make_response(f"Planet {planet_id} successfully updated!", 200)
