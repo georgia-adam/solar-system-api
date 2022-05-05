@@ -34,7 +34,7 @@ def get_planets():
     
     planets_response = [planet.to_dict() for planet in planets]
     
-    return jsonify(planets_response)
+    return jsonify(planets_response), 200
 
 @planets_bp.route("/<planet_id>", methods=["PUT"])
 def replace_planet(planet_id):
