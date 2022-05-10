@@ -1,5 +1,6 @@
 from unicodedata import name
 from app import db
+from app.models.moon import Moon
 from app.models.planet import Planet
 from flask import Blueprint, jsonify, make_response, request
 from .routes_helper import validate_planet, error_message
@@ -66,3 +67,24 @@ def delete_planet(planet_id):
     db.session.delete(planet)
     db.session.commit()
     return make_response(f"Planet {planet_id} successfully deleted.")
+
+@planets_bp.route("/<planet_id>/moons", methods=["POST"])
+def add_moon_to_planet(planet_id):
+    
+    planet = validate_planet(planet_id)
+    request_body = request.get_json()
+    new_moon = Moon(name=request_body['name'])
+    new_moon.planet = planet
+
+    db.session.add(new_moon)
+    db.session.commit()
+
+    return jsonify(new_moon.to_dict()), 201
+
+@planets_bp.route("/<planet_id>/moons", methods=["GET"])
+def get_all_moon_of_a_planet(planet_id):
+    
+    planet = validate_planet(planet_id)
+    moons_info = [moon.to_dict() for moon in planet.moons]
+
+    return jsonify(moons_info)
